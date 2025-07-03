@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Serviço da API FastAPI
+  api:
+    build: .
+    container_name: gestao_escolar_api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Monta o código local no contêiner para refletir alterações em tempo real
+      - .:/app
+    environment:
+      # URL de conexão que a aplicação usará para se conectar ao serviço 'db'
+      - DATABASE_URL=postgresql://user:password@db:5432/escola_db
+    depends_on:
+      db:
+        condition: service_healthy # Garante que a API só inicie após o DB estar pronto
+
+  # Serviço do Banco de Dados PostgreSQL
+  db:
+    image: postgres:13-alpine
+    container_name: gestao_escolar_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=escola_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d escola_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data: # Volume nomeado para persistir os dados do banco
+
